@@ -325,44 +325,36 @@ def recursive_update(d, u):
 def download(base_model):
     model = models[base_model]
     model_file = model["file"]
-    repo = model["repo"]
 
-    # download unet
-    if base_model == "flux-dev" or base_model == "flux-schnell":
-        unet_folder = "models/unet"
-    else:
-        unet_folder = f"models/unet/{repo}"
+    # Set the path to the ComfyUI models folder
+    unet_folder = "../ComfyUI/models/unet"  # Change this to point to the actual path of your local unet models
     unet_path = os.path.join(unet_folder, model_file)
-    if not os.path.exists(unet_path):
-        os.makedirs(unet_folder, exist_ok=True)
-        gr.Info(f"Downloading base model: {base_model}. Please wait. (You can check the terminal for the download progress)", duration=None)
-        print(f"download {base_model}")
-        hf_hub_download(repo_id=repo, local_dir=unet_folder, filename=model_file)
 
-    # download vae
-    vae_folder = "models/vae"
+    # Check if the unet model file exists locally
+    if not os.path.exists(unet_path):
+        raise FileNotFoundError(f"Model {unet_path} does not exist. Please make sure the model is in the correct folder.")
+    print(f"Using local unet model at {unet_path}")
+
+    # Check for VAE model
+    vae_folder = "../ComfyUI/models/vae"  # Change this to your local VAE models folder path
     vae_path = os.path.join(vae_folder, "ae.sft")
     if not os.path.exists(vae_path):
-        os.makedirs(vae_folder, exist_ok=True)
-        gr.Info(f"Downloading vae")
-        print(f"downloading ae.sft...")
-        hf_hub_download(repo_id="cocktailpeanut/xulf-dev", local_dir=vae_folder, filename="ae.sft")
+        raise FileNotFoundError(f"VAE model {vae_path} does not exist. Please make sure the model is in the correct folder.")
+    print(f"Using local VAE model at {vae_path}")
 
-    # download clip
-    clip_folder = "models/clip"
+    # Check for CLIP model
+    clip_folder = "../ComfyUI/models/clip"  # Change this to your local CLIP models folder path
     clip_l_path = os.path.join(clip_folder, "clip_l.safetensors")
     if not os.path.exists(clip_l_path):
-        os.makedirs(clip_folder, exist_ok=True)
-        gr.Info(f"Downloading clip...")
-        print(f"download clip_l.safetensors")
-        hf_hub_download(repo_id="comfyanonymous/flux_text_encoders", local_dir=clip_folder, filename="clip_l.safetensors")
+        raise FileNotFoundError(f"CLIP model {clip_l_path} does not exist. Please make sure the model is in the correct folder.")
+    print(f"Using local CLIP model at {clip_l_path}")
 
-    # download t5xxl
+    # Check for T5 model
     t5xxl_path = os.path.join(clip_folder, "t5xxl_fp16.safetensors")
     if not os.path.exists(t5xxl_path):
-        print(f"download t5xxl_fp16.safetensors")
-        gr.Info(f"Downloading t5xxl...")
-        hf_hub_download(repo_id="comfyanonymous/flux_text_encoders", local_dir=clip_folder, filename="t5xxl_fp16.safetensors")
+        raise FileNotFoundError(f"T5 model {t5xxl_path} does not exist. Please make sure the model is in the correct folder.")
+    print(f"Using local T5 model at {t5xxl_path}")
+
 
 
 def resolve_path(p):
@@ -438,18 +430,18 @@ def gen_sh(
 
     #######################################################
     model_config = models[base_model]
-    model_file = model_config["file"]
-    repo = model_config["repo"]
-    if base_model == "flux-dev" or base_model == "flux-schnell":
-        model_folder = "models/unet"
-    else:
-        model_folder = f"models/unet/{repo}"
-    model_path = os.path.join(model_folder, model_file)
-    pretrained_model_path = resolve_path(model_path)
+    # model_file = model_config["file"]
+    # repo = model_config["repo"]
+    # if base_model == "flux-dev" or base_model == "flux-schnell":
+    #     model_folder = "models/unet"
+    # else:
+    #     model_folder = f"models/unet/{repo}"
+    # model_path = os.path.join(model_folder, model_file)
+    pretrained_model_path = resolve_path("../ComfyUI/models/unet/flux1-dev.safetensors")
+    clip_path = resolve_path("../ComfyUI/models/clip/clip_l.safetensors")
+    t5_path = resolve_path("../ComfyUI/models/clip/t5xxl_fp16.safetensors")
+    ae_path = resolve_path("../ComfyUI/models/vae/ae.safetensors")
 
-    clip_path = resolve_path("models/clip/clip_l.safetensors")
-    t5_path = resolve_path("models/clip/t5xxl_fp16.safetensors")
-    ae_path = resolve_path("models/vae/ae.sft")
     sh = f"""accelerate launch {line_break}
   --mixed_precision bf16 {line_break}
   --num_cpu_threads_per_process 1 {line_break}
@@ -583,7 +575,7 @@ def start_training(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    download(base_model)
+    # download(base_model)
 
     file_type = "sh"
     if sys.platform == "win32":
